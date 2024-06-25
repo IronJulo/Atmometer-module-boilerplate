@@ -40,6 +40,18 @@ uint8_t get_device_address(ADC_HandleTypeDef *adc_handle)
 	return adc_value_to_address(get_socket_adc_value(adc_handle));
 }
 
+uint8_t get_device_address_stable(ADC_HandleTypeDef *adc_handle)
+{
+	uint32_t accumulate = 0;
+
+	for (uint8_t i = 0; i < DEVICE_ADDRESS_MEASURE_COUNT; ++i) {
+		accumulate += get_device_address(adc_handle);
+		HAL_Delay(50);
+	}
+
+	return accumulate / DEVICE_ADDRESS_MEASURE_COUNT;
+}
+
 
 uint32_t get_socket_adc_value(ADC_HandleTypeDef *adc_handle)
 {

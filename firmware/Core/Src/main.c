@@ -3,11 +3,12 @@
 #include "module_register.h"
 #include "module_address.h"
 #include "i2c_slave.h"
+#include "module_available.h"
 
 ADC_HandleTypeDef hadc1;
 I2C_HandleTypeDef hi2c1;
 
-uint8_t module_slave_address = 5;
+uint8_t  module_slave_address = MODULE_ADDRESS_NOT_CONFIGURED;
 uint32_t global_adc_readout = 0;
 uint64_t global_counter = 0;
 
@@ -25,21 +26,9 @@ int main(void)
 	MX_GPIO_Init();
 	MX_ADC1_Init();
 
-	HAL_Delay(10000);
+	HAL_Delay(1000);
 
-	uint8_t slave_address_1 = get_device_address(&hadc1);
-	HAL_Delay(50);
-	uint8_t slave_address_2 = get_device_address(&hadc1);
-	HAL_Delay(50);
-	uint8_t slave_address_3 = get_device_address(&hadc1);
-	HAL_Delay(50);
-
-	if (slave_address_1 == slave_address_2)
-		module_slave_address = slave_address_1;
-	if (slave_address_2 == slave_address_3)
-		module_slave_address = slave_address_2;
-	if (slave_address_3 == slave_address_1)
-		module_slave_address = slave_address_3;
+	module_slave_address = get_device_address_stable(&hadc1);
 
 	flash_slave_address(module_slave_address);
 
@@ -49,20 +38,20 @@ int main(void)
 
 	MX_I2C1_Init();
 
+	HAL_Delay(1000);
+
 	if (HAL_I2C_EnableListen_IT(&hi2c1) != HAL_OK) Error_Handler();
 
 	set_sensor_config_sequentialRead(true);
-	set_sensor_type(SENSOR_TYPE);
-	set_sensor_id(SENSOR_ID);
+	set_sensor_type(MODULE_TYPE_NOT_CONFIGURED);
+	set_sensor_id(MODULE_ID_NOT_CONFIGURED);
 
-	while (1)
+	while (! false)
 	{
 		global_counter++;
 		set_sensor_value_1(global_counter);
 
 		HAL_Delay(1000);
-		global_adc_readout = get_socket_adc_value(&hadc1);
-		module_slave_address = get_device_address(&hadc1);
 	}
 }
 
@@ -77,9 +66,9 @@ void flash_slave_address(uint8_t address)
 
 	for (int var = 0; var < address; ++var) {
 		HAL_GPIO_WritePin(LED_OK_GPIO_Port, LED_OK_Pin, GPIO_PIN_SET);
-		HAL_Delay(250);
+		HAL_Delay(500);
 		HAL_GPIO_WritePin(LED_OK_GPIO_Port, LED_OK_Pin, GPIO_PIN_RESET);
-		HAL_Delay(250);
+		HAL_Delay(500);
 	}
 
 	HAL_GPIO_WritePin(LED_OK_GPIO_Port, LED_OK_Pin, GPIO_PIN_RESET);
